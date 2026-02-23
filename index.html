@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Gemini OS - Fix</title>
+    <title>Gemini OS - Micro Live</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; touch-action: none; }
@@ -18,7 +18,7 @@
 <body>
 
     <div id="boot-screen" onclick="unlockAudio()">
-        <h1 id="status-text">CLIQUEZ POUR DÉMARRER</h1>
+        <h1 id="status-text">CLIQUEZ POUR INITIALISER</h1>
     </div>
 
     <a-scene vr-mode-ui="enabled: false" cursor="rayOrigin: mouse">
@@ -31,22 +31,20 @@
         </a-entity>
 
         <a-entity id="main-menu" visible="false" position="0 1.5 -2.5">
-            <a-circle class="clickable" radius="0.4" color="#4285f4" onclick="activateGemini()">
-                <a-text value="ACTIVER GEMINI" align="center" position="0 0 0.1" width="3.5"></a-text>
+            <a-circle class="clickable" radius="0.4" color="#4285f4" onclick="startGeminiVoice()">
+                <a-text value="PARLER A GEMINI" align="center" position="0 0 0.1" width="3.5"></a-text>
             </a-circle>
         </a-entity>
 
         <a-entity id="gemini-view" visible="false" position="0 1.5 -3">
-            <a-sphere id="orb" radius="0.3" color="#8ab4f8"
-                      animation="property: scale; from: 1 1 1; to: 1.2 1.2 1.2; dir: alternate; dur: 500; loop: true; enabled: false">
-            </a-sphere>
+            <a-sphere id="orb" radius="0.3" color="#8ab4f8"></a-sphere>
             
-            <a-plane width="3" height="1" position="0 1 0" color="#111">
-                <a-text id="output" value="Analyse en cours..." align="center" width="2.5"></a-text>
+            <a-plane width="3" height="1.2" position="0 1 0" color="#111">
+                <a-text id="output" value="En attente du micro..." align="center" width="2.5"></a-text>
             </a-plane>
 
             <a-box class="clickable" position="0 -1 0" width="1" height="0.4" depth="0.1" color="#333" onclick="resetOS()">
-                <a-text value="RETOUR" align="center" width="3"></a-text>
+                <a-text value="QUITTER" align="center" width="3"></a-text>
             </a-box>
         </a-entity>
     </a-scene>
@@ -56,8 +54,10 @@
         const boot = document.getElementById('boot-screen');
         const menu = document.getElementById('main-menu');
         const view = document.getElementById('gemini-view');
+        const output = document.getElementById('output');
+        const orb = document.getElementById('orb');
 
-        // Système de rotation tactile
+        // Système de rotation tactile (Axe Y débloqué)
         let pitch = 0, yaw = 0, lastX = 0, lastY = 0;
         window.addEventListener('touchstart', e => { lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; });
         window.addEventListener('touchmove', e => {
@@ -69,34 +69,58 @@
             cam.setAttribute('rotation', `${pitch} ${yaw} 0`);
         });
 
-        // Déblocage audio Safari
         function unlockAudio() {
             window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
-            document.getElementById('status-text').innerText = "SYSTÈME PRÊT";
-            setTimeout(() => {
-                boot.style.display = 'none';
-                menu.setAttribute('visible', 'true');
-            }, 500);
+            boot.style.display = 'none';
+            menu.setAttribute('visible', 'true');
         }
 
-        // Action Gemini
-        function activateGemini() {
+        function speak(text) {
+            let utter = new SpeechSynthesisUtterance(text);
+            utter.lang = 'fr-FR';
+            window.speechSynthesis.speak(utter);
+        }
+
+        function startGeminiVoice() {
             menu.setAttribute('visible', 'false');
             view.setAttribute('visible', 'true');
             
-            // Animation de l'orbite
-            const orb = document.getElementById('orb');
-            orb.setAttribute('animation', 'enabled: true');
+            // Initialisation de la reconnaissance vocale
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             
-            const msg = "Je suis Gemini. Je scanne votre espace de travail. Tout est prêt.";
-            document.getElementById('output').setAttribute('value', msg);
-            
-            // Forcer la parole
-            let synth = window.speechSynthesis;
-            let utter = new SpeechSynthesisUtterance(msg);
-            utter.lang = 'fr-FR';
-            utter.pitch = 1.1;
-            synth.speak(utter);
+            if (!SpeechRecognition) {
+                output.setAttribute('value', "Erreur: Micro non supporté sur ce navigateur.");
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'fr-FR';
+            recognition.interimResults = false;
+
+            recognition.onstart = () => {
+                output.setAttribute('value', "Gemini vous écoute...");
+                orb.setAttribute('color', '#ff4444'); // Rouge quand il écoute
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                output.setAttribute('value', "Vous: " + transcript);
+                orb.setAttribute('color', '#4285f4'); // Bleu quand il réfléchit
+                
+                // Simulation de réponse Gemini
+                setTimeout(() => {
+                    const response = "J'ai bien entendu : " + transcript + ". Comment puis-je vous aider davantage ?";
+                    output.setAttribute('value', "Gemini: " + response);
+                    speak(response);
+                }, 1000);
+            };
+
+            recognition.onerror = (event) => {
+                output.setAttribute('value', "Erreur micro: " + event.error);
+                orb.setAttribute('color', '#8ab4f8');
+            };
+
+            recognition.start();
         }
 
         function resetOS() {
