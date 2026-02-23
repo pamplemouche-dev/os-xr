@@ -2,97 +2,145 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Vision OS - Static Mode</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Gemini Spatial OS</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; }
+        body { margin: 0; overflow: hidden; background-color: #000; touch-action: none; font-family: 'Segoe UI', sans-serif; }
         
-        /* Écran de Boot */
-        #boot-screen {
+        /* Boot automatique */
+        #boot-loader {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #050505 0%, #1a1a1a 100%);
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 9999;
-            color: #fff; transition: opacity 1s ease;
+            background: #000; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 10000;
+            color: #8ab4f8; transition: opacity 1s ease;
         }
-
-        .logo-aura {
-            width: 80px; height: 80px;
-            border-radius: 50%;
-            background: #00ffcc;
-            box-shadow: 0 0 30px #00ffcc;
-            animation: pulse 2s infinite;
+        .pulse {
+            width: 20px; height: 20px; background: #4285f4; border-radius: 50%;
+            box-shadow: 0 0 20px #4285f4; animation: pulse-anim 1.5s infinite;
         }
-
-        @keyframes pulse {
-            0% { transform: scale(0.95); opacity: 0.5; }
-            50% { transform: scale(1.05); opacity: 1; }
-            100% { transform: scale(0.95); opacity: 0.5; }
-        }
-
-        #status { margin-top: 30px; font-weight: lighter; letter-spacing: 5px; font-size: 10px; }
+        @keyframes pulse-anim { 0% {transform: scale(1); opacity: 1;} 100% {transform: scale(3); opacity: 0;} }
     </style>
 </head>
 <body>
 
-    <div id="boot-screen">
-        <div class="logo-aura"></div>
-        <div id="status">SYSTÈME EN COURS...</div>
+    <div id="boot-loader">
+        <div class="pulse"></div>
+        <p style="margin-top: 30px; letter-spacing: 5px;">CHARGEMENT DE GEMINI...</p>
     </div>
 
-    <a-scene background="color: #050505" vr-mode-ui="enabled: false">
-        
-        <a-grid position="0 0 0" rotation="-90 0 0" width="100" height="100" material="color: #222; opacity: 0.2"></a-grid>
+    <a-scene vr-mode-ui="enabled: false">
+        <a-sky color="#02050a"></a-sky>
+        <a-grid position="0 0 0" rotation="-90 0 0" width="100" height="100" material="color: #1a237e; opacity: 0.1"></a-grid>
 
-        <a-camera position="0 1.6 0" look-controls="enabled: true; magicWindowTrackingEnabled: false">
-            <a-cursor color="#00ffcc"></a-cursor>
-        </a-camera>
+        <a-entity id="rig" position="0 1.6 0">
+            <a-camera look-controls="magicWindowTrackingEnabled: false; touchEnabled: true">
+                <a-cursor color="#8ab4f8" radius-inner="0.01" radius-outer="0.015"></a-cursor>
+            </a-camera>
+        </a-entity>
 
-        <a-entity id="interface" visible="false" position="0 1.6 -2.5">
+        <a-entity id="main-menu" visible="false" position="0 1.5 -2.5">
+            <a-plane width="3.5" height="1.2" color="#fff" opacity="0.05" material="transparent: true; roughness: 0"></a-plane>
             
-            <a-plane width="3" height="1.5" color="#fff" opacity="0.05" material="transparent: true; metalness: 0.5">
-                <a-text value="OS VISION - MODE STATIQUE" align="center" position="0 0.5 0.01" width="3.5"></a-text>
-                
-                <a-entity position="-1 -0.2 0.05">
-                    <a-circle radius="0.25" color="#007AFF"></a-circle>
-                    <a-text value="MAIL" align="center" position="0 -0.4 0" width="2"></a-text>
-                </a-entity>
+            <a-entity id="btn-gemini" position="0 0 0.1" class="clickable" onclick="openGemini()">
+                <a-circle radius="0.35" color="#4285f4" opacity="0.9"
+                          animation="property: scale; from: 1 1 1; to: 1.05 1.05 1.05; dir: alternate; dur: 1500; loop: true">
+                </a-circle>
+                <a-text value="GEMINI" align="center" position="0 0 0.05" width="4" font="exo2bold"></a-text>
+            </a-entity>
 
-                <a-entity position="0 -0.2 0.05">
-                    <a-circle radius="0.25" color="#00ffcc"></a-circle>
-                    <a-text value="IA" align="center" position="0 -0.4 0" width="2"></a-text>
-                </a-entity>
+            <a-circle id="btn-mail" position="-1.2 0 0.1" radius="0.25" color="#555" opacity="0.8">
+                <a-text value="MAILS" align="center" width="2.5"></a-text>
+            </a-circle>
+            <a-circle id="btn-docs" position="1.2 0 0.1" radius="0.25" color="#555" opacity="0.8">
+                <a-text value="DOCS" align="center" width="2.5"></a-text>
+            </a-circle>
+        </a-entity>
 
-                <a-entity position="1 -0.2 0.05">
-                    <a-circle radius="0.25" color="#FF9500"></a-circle>
-                    <a-text value="DOCS" align="center" position="0 -0.4 0" width="2"></a-text>
-                </a-entity>
+        <a-entity id="gemini-view" visible="false" position="0 1.5 -3">
+            <a-sphere id="gemini-orb" radius="0.4" color="#4285f4" opacity="0.7">
+                <a-light type="point" intensity="0.6" color="#8ab4f8"></a-light>
+            </a-sphere>
+
+            <a-plane width="3" height="1" position="0 1 0" color="#111" opacity="0.9">
+                <a-text id="gemini-output" value="Je vous écoute..." align="center" width="2.8" color="#fff"></a-text>
             </a-plane>
 
+            <a-box position="0 -0.8 0" width="0.8" height="0.3" depth="0.1" color="#333" onclick="closeGemini()">
+                <a-text value="RETOUR" align="center" width="2.5"></a-text>
+            </a-box>
         </a-entity>
 
     </a-scene>
 
     <script>
-        const boot = document.getElementById('boot-screen');
-        const status = document.getElementById('status');
-        const ui = document.getElementById('interface');
+        const boot = document.getElementById('boot-loader');
+        const mainMenu = document.getElementById('main-menu');
+        const geminiView = document.getElementById('gemini-view');
+        const gOutput = document.getElementById('gemini-output');
+        const gOrb = document.getElementById('gemini-orb');
 
-        // Séquence de boot automatique sans interaction
+        // Lancement auto
         window.onload = () => {
-            setTimeout(() => status.innerText = "CHARGEMENT DE L'INTERFACE...", 1000);
-            setTimeout(() => status.innerText = "OPTIMISATION GRAPHIQUE...", 2500);
-            
             setTimeout(() => {
                 boot.style.opacity = '0';
                 setTimeout(() => {
                     boot.style.display = 'none';
-                    ui.setAttribute('visible', 'true');
-                    ui.setAttribute('animation', 'property: scale; from: 0 0 0; to: 1 1 1; dur: 800; easing: easeOutBack');
+                    mainMenu.setAttribute('visible', 'true');
+                    mainMenu.setAttribute('animation', 'property: scale; from: 0 0 0; to: 1 1 1; dur: 800; easing: easeOutBack');
                 }, 1000);
-            }, 4000);
+            }, 3000);
         };
+
+        // Fonction Vocale (Réponse de Gemini)
+        function speak(text) {
+            const synth = window.speechSynthesis;
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.lang = 'fr-FR';
+            synth.speak(utter);
+        }
+
+        // Ouvrir l'interface Gemini
+        function openGemini() {
+            mainMenu.setAttribute('visible', 'false');
+            geminiView.setAttribute('visible', 'true');
+            gOutput.setAttribute('value', "Gemini activé. Dites quelque chose.");
+            speak("Gemini activé. Je vous écoute.");
+            
+            // On peut ici lancer la reconnaissance vocale si supportée
+            startListening();
+        }
+
+        function closeGemini() {
+            geminiView.setAttribute('visible', 'false');
+            mainMenu.setAttribute('visible', 'true');
+            window.speechSynthesis.cancel();
+        }
+
+        // Simulation de reconnaissance vocale
+        function startListening() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'fr-FR';
+                recognition.start();
+
+                recognition.onresult = (event) => {
+                    const speechToText = event.results[0][0].transcript;
+                    gOutput.setAttribute('value', "Vous: " + speechToText);
+                    
+                    // Simulation de réponse intelligente
+                    setTimeout(() => {
+                        const response = "C'est une excellente question. En tant que votre assistant spatial, je pense que " + speechToText + " est un sujet passionnant.";
+                        gOutput.setAttribute('value', "Gemini: " + response);
+                        speak(response);
+                    }, 1500);
+                };
+            }
+        }
+
+        // Empêcher le scroll iPad
+        window.addEventListener('touchmove', (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
     </script>
 </body>
 </html>
