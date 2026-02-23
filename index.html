@@ -2,76 +2,103 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pamplemouche XR - Basic Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>OS XR - Auto Boot</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; }
-        /* Interface de contrôle 2D par-dessus la 3D */
-        #ui-overlay {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 100; display: flex; gap: 20px;
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; }
+        
+        /* Écran de Boot automatique */
+        #boot-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, #0c111a 0%, #000 100%);
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999;
+            color: #00ffcc; transition: opacity 1.5s ease;
         }
-        .btn {
-            padding: 12px 24px; background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.4); border-radius: 30px;
-            color: white; backdrop-filter: blur(10px); cursor: pointer;
-            font-family: sans-serif; transition: 0.3s;
+
+        .spinner {
+            width: 50px; height: 50px;
+            border: 3px solid rgba(0, 255, 204, 0.1);
+            border-top: 3px solid #00ffcc;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
-        .btn:hover { background: rgba(255,255,255,0.4); }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #status-text { margin-top: 20px; letter-spacing: 3px; font-size: 12px; }
     </style>
 </head>
-<body>
+<body onclick="requestAccess()">
 
-    <div id="ui-overlay">
-        <button class="btn" onclick="toggleApp('mail-window')">Mails</button>
-        <button class="btn" onclick="toggleApp('video-window')">Cinéma</button>
-        <button class="btn" onclick="resetView()">Reset Vue</button>
+    <div id="boot-screen">
+        <div class="spinner"></div>
+        <div id="status-text">CHARGEMENT DU NOYAU...</div>
     </div>
 
-    <a-scene background="color: #111">
-        <a-sky src="https://dl.polyhaven.org/file/ph-assets/Environments/jpg/4k/modern_buildings_2.jpg" rotation="0 -90 0"></a-sky>
+    <a-scene device-orientation-permission-ui="enabled: false">
+        <a-sky color="#0c111a"></a-sky>
+        <a-grid position="0 0 0" rotation="-90 0 0" width="100" height="100" material="color: #1a2a3a; opacity: 0.3"></a-grid>
 
-        <a-camera id="main-cam">
-            <a-cursor color="#FFF" radius-inner="0.005" radius-outer="0.01"></a-cursor>
+        <a-camera id="cam" look-controls="enabled: true; magicWindowTrackingEnabled: true">
+            <a-cursor color="#fff" radius-inner="0.01" radius-outer="0.015"></a-cursor>
         </a-camera>
 
-        <a-entity id="mail-window" position="-1.5 1.6 -2.5" visible="true">
-            <a-plane width="2" height="1.2" material="color: white; opacity: 0.15; transparent: true; roughness: 0; metalness: 0.1" 
-                     animation="property: position; to: -1.5 1.65 -2.5; dir: alternate; dur: 3000; loop: true">
-                <a-text value="Boite de Réception" align="center" position="0 0.4 0.01" color="white" width="3"></a-text>
-                <a-text value="- Meeting avec l'équipe (10h)\n- Projet Lunettes XR (Update)\n- Facture Apple Store" 
-                        align="left" position="-0.8 0 0.01" color="white" width="2"></a-text>
+        <a-entity id="os-interface" visible="false" position="0 1.6 -3">
+            <a-plane width="3.5" height="2" color="#fff" opacity="0.1" material="transparent: true; roughness: 0">
+                <a-text value="VISION OS SIMULATOR" align="center" position="0 0.7 0.05" width="4" font="exo2bold"></a-text>
+                
+                <a-circle position="-1 0 0.1" radius="0.3" color="#007AFF" animation="property: scale; from: 1 1 1; to: 1.1 1.1 1.1; dir: alternate; dur: 2000; loop: true">
+                    <a-text value="MAILS" align="center" position="0 -0.5 0" width="2.5"></a-text>
+                </a-circle>
+
+                <a-octahedron position="0 0 0.1" radius="0.35" color="#00ffcc" animation="property: rotation; to: 0 360 0; dur: 5000; loop: true; easing: linear">
+                    <a-text value="IA" align="center" position="0 -0.6 0" width="3"></a-text>
+                </a-octahedron>
+
+                <a-box position="1 0 0.1" width="0.5" height="0.5" depth="0.1" color="#FF9500">
+                    <a-text value="DOCS" align="center" position="0 -0.5 0" width="2.5"></a-text>
+                </a-box>
             </a-plane>
         </a-entity>
-
-        <a-entity id="video-window" position="1.5 1.8 -4" visible="true">
-            <a-plane width="3.5" height="2" material="color: black; opacity: 0.8; transparent: true">
-                <a-text value="LECTEUR VIDEO" align="center" color="#00ffcc" width="6"></a-text>
-                <a-circle position="0 0 0.02" radius="0.2" color="#00ffcc"></a-circle>
-            </a-plane>
-        </a-entity>
-
-        <a-entity position="0 1 -2">
-            <a-circle radius="0.15" color="#555" opacity="0.5" position="-0.5 0 0"></a-circle>
-            <a-circle radius="0.15" color="#555" opacity="0.5" position="0 0 0"></a-circle>
-            <a-circle radius="0.15" color="#555" opacity="0.5" position="0.5 0 0"></a-circle>
-        </a-entity>
-
     </a-scene>
 
     <script>
-        function toggleApp(id) {
-            const el = document.getElementById(id);
-            const isVisible = el.getAttribute('visible');
-            el.setAttribute('visible', !isVisible);
+        const bootScreen = document.getElementById('boot-screen');
+        const status = document.getElementById('status-text');
+        const interface = document.getElementById('os-interface');
+
+        // Fonction de démarrage automatique
+        function runAutoBoot() {
+            setTimeout(() => { status.innerText = "CALIBRATION DES CAPTEURS..."; }, 1000);
+            setTimeout(() => { status.innerText = "SYNCHRONISATION SPATIALE..."; }, 2500);
+            setTimeout(() => { status.innerText = "SYSTÈME PRÊT."; }, 4000);
+
+            setTimeout(() => {
+                bootScreen.style.opacity = '0';
+                setTimeout(() => {
+                    bootScreen.style.display = 'none';
+                    interface.setAttribute('visible', 'true');
+                    // Animation d'entrée
+                    interface.setAttribute('animation', 'property: scale; from: 0 0 0; to: 1 1 1; dur: 1200; easing: easeOutElastic');
+                }, 1500);
+            }, 5000);
         }
 
-        function resetView() {
-            const cam = document.getElementById('main-cam');
-            cam.setAttribute('rotation', '0 0 0');
-            cam.setAttribute('position', '0 1.6 0');
+        // Gestion spécifique iPad/iOS pour débloquer les capteurs au premier clic
+        let accessRequested = false;
+        function requestAccess() {
+            if (accessRequested) return;
+            
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission().catch(console.error);
+            }
+            accessRequested = true;
         }
+
+        // Lancement automatique du script de boot au chargement
+        window.onload = runAutoBoot;
     </script>
 </body>
 </html>
