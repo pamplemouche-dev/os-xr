@@ -37,10 +37,17 @@
 
     <a-scene vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
         
-        <a-camera id="camera" look-controls="magicWindowTrackingEnabled: true; touchEnabled: false">
-            <a-cursor color="#00ffcc" radius-inner="0.01" radius-outer="0.02"></a-cursor>
-        </a-camera>
-
+        <a-camera id="camera" 
+          look-controls="magicWindowTrackingEnabled: true; touchEnabled: false; reverseMouseDrag: false"
+          wasd-controls-enabled="false"
+          position="0 1.6 0">
+    <a-entity id="hand-cursor" 
+              geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.015"
+              material="color: #ff0000; shader: flat; depthTest: false"
+              position="0 0 -1"
+              visible="false">
+    </a-entity>
+</a-camera>
         <a-entity id="app-menu" visible="false">
             <a-sphere position="-1.5 1.5 -3" radius="0.4" color="#007AFF" class="clickable">
                 <a-text value="MAILS" align="center" position="0 -0.6 0"></a-text>
@@ -95,6 +102,15 @@
                 }, 1000);
             }, 3000);
         }
+        // Force la scène à se rafraîchir à la vitesse maximale de l'iPad (ProMotion 120Hz si dispo)
+const sceneEl = document.querySelector('a-scene');
+sceneEl.addEventListener('renderstart', () => {
+    sceneEl.renderer.setPixelRatio(window.devicePixelRatio);
+});
+
+// Désactiver le lissage par défaut d'A-Frame qui cause le "flottement"
+const cameraEl = document.querySelector('#camera');
+cameraEl.setAttribute('look-controls', 'smoothingFactor: 1'); // 1 = pas de lissage, réaction brute
     </script>
 </body>
 </html>
