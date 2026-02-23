@@ -3,111 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Gemini OS - Final Control</title>
+    <title>Gemini OS - Fix</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; touch-action: none; font-family: sans-serif; }
-        #boot-loader {
+        body { margin: 0; overflow: hidden; background-color: #000; touch-action: none; }
+        #boot-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle, #1a237e 0%, #000 100%);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 10000; color: #fff; transition: opacity 1s ease;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 10000; color: #fff; font-family: sans-serif; cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-    <div id="boot-loader">
-        <p style="letter-spacing: 5px;">CHARGEMENT DE GEMINI...</p>
+    <div id="boot-screen" onclick="unlockAudio()">
+        <h1 id="status-text">CLIQUEZ POUR DÉMARRER</h1>
     </div>
 
-    <a-scene vr-mode-ui="enabled: false">
+    <a-scene vr-mode-ui="enabled: false" cursor="rayOrigin: mouse">
         <a-sky color="#02050a"></a-sky>
         
-        <a-entity id="camera-rig">
-            <a-camera id="main-cam" look-controls="enabled: false" wasd-controls-enabled="false">
-                <a-cursor color="#8ab4f8" radius-inner="0.01" radius-outer="0.015"></a-cursor>
+        <a-entity id="rig">
+            <a-camera id="main-cam" look-controls="enabled: false">
+                <a-cursor color="#8ab4f8" raycaster="objects: .clickable"></a-cursor>
             </a-camera>
         </a-entity>
 
         <a-entity id="main-menu" visible="false" position="0 1.5 -2.5">
-            <a-plane width="3.5" height="1.2" color="#fff" opacity="0.05" material="transparent: true"></a-plane>
-            
-            <a-entity class="clickable" onclick="openGemini()">
-                <a-circle radius="0.4" color="#4285f4" animation="property: scale; from: 1 1 1; to: 1.05 1.05 1.05; dir: alternate; dur: 1500; loop: true"></a-circle>
-                <a-text value="OUVRIR GEMINI" align="center" position="0 0 0.05" width="4"></a-text>
-            </a-entity>
+            <a-circle class="clickable" radius="0.4" color="#4285f4" onclick="activateGemini()">
+                <a-text value="ACTIVER GEMINI" align="center" position="0 0 0.1" width="3.5"></a-text>
+            </a-circle>
         </a-entity>
 
         <a-entity id="gemini-view" visible="false" position="0 1.5 -3">
-            <a-sphere id="gemini-orb" radius="0.3" color="#8ab4f8" opacity="0.8">
-                <a-light type="point" intensity="0.5" color="#8ab4f8"></a-light>
+            <a-sphere id="orb" radius="0.3" color="#8ab4f8"
+                      animation="property: scale; from: 1 1 1; to: 1.2 1.2 1.2; dir: alternate; dur: 500; loop: true; enabled: false">
             </a-sphere>
-
-            <a-plane width="3" height="1" position="0 1 0" color="#111" opacity="0.9">
-                <a-text id="gemini-output" value="Je vous écoute..." align="center" width="2.8" color="#fff"></a-text>
+            
+            <a-plane width="3" height="1" position="0 1 0" color="#111">
+                <a-text id="output" value="Analyse en cours..." align="center" width="2.5"></a-text>
             </a-plane>
 
-            <a-box position="0 -0.8 0" width="0.8" height="0.3" depth="0.1" color="#333" onclick="closeGemini()">
-                <a-text value="QUITTER" align="center" width="2.5"></a-text>
+            <a-box class="clickable" position="0 -1 0" width="1" height="0.4" depth="0.1" color="#333" onclick="resetOS()">
+                <a-text value="RETOUR" align="center" width="3"></a-text>
             </a-box>
         </a-entity>
-
-        <a-text value="PLAFOND" position="0 5 -5" align="center" color="#222"></a-text>
-        <a-text value="SOL" position="0 -2 -5" align="center" color="#222"></a-text>
-
     </a-scene>
 
     <script>
         const cam = document.getElementById('main-cam');
-        const boot = document.getElementById('boot-loader');
-        const mainMenu = document.getElementById('main-menu');
-        const geminiView = document.getElementById('gemini-view');
-        const gOutput = document.getElementById('gemini-output');
+        const boot = document.getElementById('boot-screen');
+        const menu = document.getElementById('main-menu');
+        const view = document.getElementById('gemini-view');
 
-        // GESTION DES ROTATIONS (FORCÉES)
-        let pitch = 0, yaw = 0, isTouching = false, lastX = 0, lastY = 0;
-        const sensitivity = 0.2;
-
-        window.addEventListener('touchstart', (e) => { isTouching = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; });
-        window.addEventListener('touchend', () => { isTouching = false; });
-        window.addEventListener('touchmove', (e) => {
-            if (!isTouching) return;
+        // Système de rotation tactile
+        let pitch = 0, yaw = 0, lastX = 0, lastY = 0;
+        window.addEventListener('touchstart', e => { lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; });
+        window.addEventListener('touchmove', e => {
             let dx = e.touches[0].clientX - lastX;
             let dy = e.touches[0].clientY - lastY;
             lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
-            yaw -= dx * sensitivity;
-            pitch -= dy * sensitivity;
+            yaw -= dx * 0.3; pitch -= dy * 0.3;
             pitch = Math.max(-90, Math.min(90, pitch));
             cam.setAttribute('rotation', `${pitch} ${yaw} 0`);
-            e.preventDefault();
-        }, { passive: false });
+        });
 
-        // LOGIQUE OS
-        window.onload = () => {
+        // Déblocage audio Safari
+        function unlockAudio() {
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
+            document.getElementById('status-text').innerText = "SYSTÈME PRÊT";
             setTimeout(() => {
-                boot.style.opacity = '0';
-                setTimeout(() => { boot.style.display = 'none'; mainMenu.setAttribute('visible', 'true'); }, 1000);
-            }, 3000);
-        };
+                boot.style.display = 'none';
+                menu.setAttribute('visible', 'true');
+            }, 500);
+        }
 
-        function speak(text) {
-            const utter = new SpeechSynthesisUtterance(text);
+        // Action Gemini
+        function activateGemini() {
+            menu.setAttribute('visible', 'false');
+            view.setAttribute('visible', 'true');
+            
+            // Animation de l'orbite
+            const orb = document.getElementById('orb');
+            orb.setAttribute('animation', 'enabled: true');
+            
+            const msg = "Je suis Gemini. Je scanne votre espace de travail. Tout est prêt.";
+            document.getElementById('output').setAttribute('value', msg);
+            
+            // Forcer la parole
+            let synth = window.speechSynthesis;
+            let utter = new SpeechSynthesisUtterance(msg);
             utter.lang = 'fr-FR';
-            window.speechSynthesis.speak(utter);
+            utter.pitch = 1.1;
+            synth.speak(utter);
         }
 
-        function openGemini() {
-            mainMenu.setAttribute('visible', 'false');
-            geminiView.setAttribute('visible', 'true');
-            const welcome = "Gemini activé. Comment puis-je vous aider ?";
-            gOutput.setAttribute('value', welcome);
-            speak(welcome);
-        }
-
-        function closeGemini() {
-            geminiView.setAttribute('visible', 'false');
-            mainMenu.setAttribute('visible', 'true');
+        function resetOS() {
+            view.setAttribute('visible', 'false');
+            menu.setAttribute('visible', 'true');
             window.speechSynthesis.cancel();
         }
     </script>
