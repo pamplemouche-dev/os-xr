@@ -1,72 +1,86 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>OS Boot Simulation - Next Gen XR</title>
+    <title>NextGen XR - Simulation OS</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <style>
-        /* Style pour l'écran de chargement 2D superposé */
+        body { margin: 0; overflow: hidden; background-color: #000; }
         #boot-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: black;
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            z-index: 9999;
-            color: #00ffcc;
-            font-family: 'Courier New', monospace;
-            transition: opacity 2s ease-in-out;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: black; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999;
+            color: #00ffcc; font-family: 'Segoe UI', sans-serif;
+            transition: opacity 1.5s ease;
         }
-        .loader {
-            border: 2px solid #333;
-            border-top: 2px solid #00ffcc;
-            border-radius: 50%;
-            width: 80px; height: 80px;
-            animation: spin 1s linear infinite;
+        /* Style pour la vidéo de la webcam en fond */
+        #webcam-video {
+            position: fixed; top: 0; left: 0; min-width: 100%; min-height: 100%;
+            z-index: -1; object-fit: cover; filter: brightness(0.7);
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body style="margin: 0; overflow: hidden;">
+<body>
+
+    <video id="webcam-video" autoplay playsinline></video>
 
     <div id="boot-overlay">
-        <div class="loader"></div>
-        <h1 style="letter-spacing: 10px; margin-top: 20px;">SYSTEM OS</h1>
-        <p id="boot-status">INITIALIZING OPTICS...</p>
+        <h2 id="boot-text" style="letter-spacing: 5px;">SYSTEM STARTING...</h2>
+        <div style="width: 200px; height: 2px; background: #222; margin-top: 10px;">
+            <div id="progress-bar" style="width: 0%; height: 100%; background: #00ffcc; transition: width 4s linear;"></div>
+        </div>
     </div>
 
     <a-scene vr-mode-ui="enabled: false">
-        <a-camera position="0 1.6 0" look-controls>
-            <a-cursor color="#00ffcc" radius-inner="0.002" radius-outer="0.003"></a-cursor>
+        <a-camera position="0 1.6 0">
+            <a-cursor color="#00ffcc"></a-cursor>
         </a-camera>
 
-        <a-sky id="background-sky" color="black"></a-sky>
+        <a-entity id="app-menu" visible="false">
+            <a-sphere position="-1.5 1.8 -3" radius="0.4" color="#007AFF" 
+                      animation="property: position; to: -1.5 1.9 -3; dir: alternate; dur: 2000; loop: true">
+                <a-text value="MESSAGES" align="center" position="0 -0.6 0" width="3"></a-text>
+            </a-sphere>
 
-        <a-entity id="main-logo" position="0 1.6 -2" scale="0 0 0">
-            <a-ring color="#00ffcc" radius-inner="0.4" radius-outer="0.41"></a-ring>
-            <a-text value="READY" align="center" width="4" position="0 0 0"></a-text>
+            <a-sphere position="0 1.8 -3.5" radius="0.5" color="#00ffcc"
+                      animation="property: scale; to: 1.1 1.1 1.1; dir: alternate; dur: 1500; loop: true">
+                <a-text value="AI ASSISTANT" align="center" position="0 -0.7 0" width="4"></a-text>
+            </a-sphere>
+
+            <a-sphere position="1.5 1.8 -3" radius="0.4" color="#FF9500"
+                      animation="property: position; to: 1.5 1.7 -3; dir: alternate; dur: 2500; loop: true">
+                <a-text value="WORKSPACE" align="center" position="0 -0.6 0" width="3"></a-text>
+            </a-sphere>
         </a-entity>
     </a-scene>
 
     <script>
+        const video = document.getElementById('webcam-video');
         const overlay = document.getElementById('boot-overlay');
-        const status = document.getElementById('boot-status');
-        const sky = document.getElementById('background-sky');
-        const logo = document.getElementById('main-logo');
+        const progBar = document.getElementById('progress-bar');
+        const appMenu = document.getElementById('app-menu');
 
-        // Séquence de boot
-        setTimeout(() => { status.innerText = "SENSORS CALIBRATION..."; }, 1500);
-        setTimeout(() => { status.innerText = "LINKING COMPUTE UNIT..."; }, 3000);
-        setTimeout(() => { status.innerText = "HAND TRACKING READY."; }, 4500);
+        // 1. Accès Webcam
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => { video.srcObject = stream; })
+            .catch(err => { console.error("Erreur webcam:", err); });
 
-        // Fin du boot : On passe à la vision "Passthrough"
-        setTimeout(() => {
-            overlay.style.opacity = '0';
-            setTimeout(() => { 
-                overlay.style.display = 'none';
-                // On fait apparaître le logo en 3D
-                logo.setAttribute('animation', 'property: scale; to: 1 1 1; dur: 1000; easing: easeOutElastic');
-            }, 2000);
-        }, 5500);
+        // 2. Logique de Boot
+        window.onload = () => {
+            progBar.style.width = '100%';
+            
+            setTimeout(() => {
+                document.getElementById('boot-text').innerText = "CALIBRATION COMPLETE";
+                setTimeout(() => {
+                    overlay.style.opacity = '0';
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                        // Faire apparaître le menu
+                        appMenu.setAttribute('visible', 'true');
+                        appMenu.setAttribute('animation', 'property: scale; from: 0 0 0; to: 1 1 1; dur: 1000; easing: easeOutBack');
+                    }, 1500);
+                }, 1000);
+            }, 4000);
+        };
     </script>
 </body>
 </html>
