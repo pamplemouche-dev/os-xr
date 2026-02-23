@@ -3,102 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>OS XR - Auto Boot</title>
+    <title>Vision OS - Static Mode</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; }
         
-        /* Écran de Boot automatique */
+        /* Écran de Boot */
         #boot-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, #0c111a 0%, #000 100%);
+            background: linear-gradient(135deg, #050505 0%, #1a1a1a 100%);
             display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 9999;
-            color: #00ffcc; transition: opacity 1.5s ease;
+            color: #fff; transition: opacity 1s ease;
         }
 
-        .spinner {
-            width: 50px; height: 50px;
-            border: 3px solid rgba(0, 255, 204, 0.1);
-            border-top: 3px solid #00ffcc;
+        .logo-aura {
+            width: 80px; height: 80px;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            background: #00ffcc;
+            box-shadow: 0 0 30px #00ffcc;
+            animation: pulse 2s infinite;
         }
 
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.5; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.5; }
+        }
 
-        #status-text { margin-top: 20px; letter-spacing: 3px; font-size: 12px; }
+        #status { margin-top: 30px; font-weight: lighter; letter-spacing: 5px; font-size: 10px; }
     </style>
 </head>
-<body onclick="requestAccess()">
+<body>
 
     <div id="boot-screen">
-        <div class="spinner"></div>
-        <div id="status-text">CHARGEMENT DU NOYAU...</div>
+        <div class="logo-aura"></div>
+        <div id="status">SYSTÈME EN COURS...</div>
     </div>
 
-    <a-scene device-orientation-permission-ui="enabled: false">
-        <a-sky color="#0c111a"></a-sky>
-        <a-grid position="0 0 0" rotation="-90 0 0" width="100" height="100" material="color: #1a2a3a; opacity: 0.3"></a-grid>
+    <a-scene background="color: #050505" vr-mode-ui="enabled: false">
+        
+        <a-grid position="0 0 0" rotation="-90 0 0" width="100" height="100" material="color: #222; opacity: 0.2"></a-grid>
 
-        <a-camera id="cam" look-controls="enabled: true; magicWindowTrackingEnabled: true">
-            <a-cursor color="#fff" radius-inner="0.01" radius-outer="0.015"></a-cursor>
+        <a-camera position="0 1.6 0" look-controls="enabled: true; magicWindowTrackingEnabled: false">
+            <a-cursor color="#00ffcc"></a-cursor>
         </a-camera>
 
-        <a-entity id="os-interface" visible="false" position="0 1.6 -3">
-            <a-plane width="3.5" height="2" color="#fff" opacity="0.1" material="transparent: true; roughness: 0">
-                <a-text value="VISION OS SIMULATOR" align="center" position="0 0.7 0.05" width="4" font="exo2bold"></a-text>
+        <a-entity id="interface" visible="false" position="0 1.6 -2.5">
+            
+            <a-plane width="3" height="1.5" color="#fff" opacity="0.05" material="transparent: true; metalness: 0.5">
+                <a-text value="OS VISION - MODE STATIQUE" align="center" position="0 0.5 0.01" width="3.5"></a-text>
                 
-                <a-circle position="-1 0 0.1" radius="0.3" color="#007AFF" animation="property: scale; from: 1 1 1; to: 1.1 1.1 1.1; dir: alternate; dur: 2000; loop: true">
-                    <a-text value="MAILS" align="center" position="0 -0.5 0" width="2.5"></a-text>
-                </a-circle>
+                <a-entity position="-1 -0.2 0.05">
+                    <a-circle radius="0.25" color="#007AFF"></a-circle>
+                    <a-text value="MAIL" align="center" position="0 -0.4 0" width="2"></a-text>
+                </a-entity>
 
-                <a-octahedron position="0 0 0.1" radius="0.35" color="#00ffcc" animation="property: rotation; to: 0 360 0; dur: 5000; loop: true; easing: linear">
-                    <a-text value="IA" align="center" position="0 -0.6 0" width="3"></a-text>
-                </a-octahedron>
+                <a-entity position="0 -0.2 0.05">
+                    <a-circle radius="0.25" color="#00ffcc"></a-circle>
+                    <a-text value="IA" align="center" position="0 -0.4 0" width="2"></a-text>
+                </a-entity>
 
-                <a-box position="1 0 0.1" width="0.5" height="0.5" depth="0.1" color="#FF9500">
-                    <a-text value="DOCS" align="center" position="0 -0.5 0" width="2.5"></a-text>
-                </a-box>
+                <a-entity position="1 -0.2 0.05">
+                    <a-circle radius="0.25" color="#FF9500"></a-circle>
+                    <a-text value="DOCS" align="center" position="0 -0.4 0" width="2"></a-text>
+                </a-entity>
             </a-plane>
+
         </a-entity>
+
     </a-scene>
 
     <script>
-        const bootScreen = document.getElementById('boot-screen');
-        const status = document.getElementById('status-text');
-        const interface = document.getElementById('os-interface');
+        const boot = document.getElementById('boot-screen');
+        const status = document.getElementById('status');
+        const ui = document.getElementById('interface');
 
-        // Fonction de démarrage automatique
-        function runAutoBoot() {
-            setTimeout(() => { status.innerText = "CALIBRATION DES CAPTEURS..."; }, 1000);
-            setTimeout(() => { status.innerText = "SYNCHRONISATION SPATIALE..."; }, 2500);
-            setTimeout(() => { status.innerText = "SYSTÈME PRÊT."; }, 4000);
-
-            setTimeout(() => {
-                bootScreen.style.opacity = '0';
-                setTimeout(() => {
-                    bootScreen.style.display = 'none';
-                    interface.setAttribute('visible', 'true');
-                    // Animation d'entrée
-                    interface.setAttribute('animation', 'property: scale; from: 0 0 0; to: 1 1 1; dur: 1200; easing: easeOutElastic');
-                }, 1500);
-            }, 5000);
-        }
-
-        // Gestion spécifique iPad/iOS pour débloquer les capteurs au premier clic
-        let accessRequested = false;
-        function requestAccess() {
-            if (accessRequested) return;
+        // Séquence de boot automatique sans interaction
+        window.onload = () => {
+            setTimeout(() => status.innerText = "CHARGEMENT DE L'INTERFACE...", 1000);
+            setTimeout(() => status.innerText = "OPTIMISATION GRAPHIQUE...", 2500);
             
-            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission().catch(console.error);
-            }
-            accessRequested = true;
-        }
-
-        // Lancement automatique du script de boot au chargement
-        window.onload = runAutoBoot;
+            setTimeout(() => {
+                boot.style.opacity = '0';
+                setTimeout(() => {
+                    boot.style.display = 'none';
+                    ui.setAttribute('visible', 'true');
+                    ui.setAttribute('animation', 'property: scale; from: 0 0 0; to: 1 1 1; dur: 800; easing: easeOutBack');
+                }, 1000);
+            }, 4000);
+        };
     </script>
 </body>
 </html>
