@@ -2,115 +2,76 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>NextGen XR - Fixation Spatiale</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pamplemouche XR - Basic Edition</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: sans-serif; }
-        #webcam-video {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            object-fit: cover; z-index: -1; filter: brightness(0.8);
+        body { margin: 0; overflow: hidden; background: #000; }
+        /* Interface de contrôle 2D par-dessus la 3D */
+        #ui-overlay {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 100; display: flex; gap: 20px;
         }
-        /* Bouton d'autorisation obligatoire pour iPad */
-        #start-button {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            padding: 20px 40px; background: #00ffcc; border: none; border-radius: 50px;
-            font-weight: bold; cursor: pointer; z-index: 10000;
+        .btn {
+            padding: 12px 24px; background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.4); border-radius: 30px;
+            color: white; backdrop-filter: blur(10px); cursor: pointer;
+            font-family: sans-serif; transition: 0.3s;
         }
-        #boot-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: black; display: none; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 9999;
-            color: #00ffcc; transition: opacity 1s;
-        }
+        .btn:hover { background: rgba(255,255,255,0.4); }
     </style>
 </head>
 <body>
 
-    <button id="start-button">DÉMARRER L'OS</button>
-
-    <div id="boot-overlay">
-        <h2 id="boot-text">INITIALISATION...</h2>
+    <div id="ui-overlay">
+        <button class="btn" onclick="toggleApp('mail-window')">Mails</button>
+        <button class="btn" onclick="toggleApp('video-window')">Cinéma</button>
+        <button class="btn" onclick="resetView()">Reset Vue</button>
     </div>
 
-    <video id="webcam-video" autoplay playsinline></video>
+    <a-scene background="color: #111">
+        <a-sky src="https://dl.polyhaven.org/file/ph-assets/Environments/jpg/4k/modern_buildings_2.jpg" rotation="0 -90 0"></a-sky>
 
-    <a-scene vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-        
-        <a-camera id="camera" 
-          look-controls="magicWindowTrackingEnabled: true; touchEnabled: false; reverseMouseDrag: false"
-          wasd-controls-enabled="false"
-          position="0 1.6 0">
-    <a-entity id="hand-cursor" 
-              geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.015"
-              material="color: #ff0000; shader: flat; depthTest: false"
-              position="0 0 -1"
-              visible="false">
-    </a-entity>
-</a-camera>
-        <a-entity id="app-menu" visible="false">
-            <a-sphere position="-1.5 1.5 -3" radius="0.4" color="#007AFF" class="clickable">
-                <a-text value="MAILS" align="center" position="0 -0.6 0"></a-text>
-            </a-sphere>
+        <a-camera id="main-cam">
+            <a-cursor color="#FFF" radius-inner="0.005" radius-outer="0.01"></a-cursor>
+        </a-camera>
 
-            <a-octahedron position="0 1.8 -4" radius="0.5" color="#00ffcc" class="clickable">
-                <a-text value="AI" align="center" position="0 -0.8 0"></a-text>
-            </a-octahedron>
+        <a-entity id="mail-window" position="-1.5 1.6 -2.5" visible="true">
+            <a-plane width="2" height="1.2" material="color: white; opacity: 0.15; transparent: true; roughness: 0; metalness: 0.1" 
+                     animation="property: position; to: -1.5 1.65 -2.5; dir: alternate; dur: 3000; loop: true">
+                <a-text value="Boite de Réception" align="center" position="0 0.4 0.01" color="white" width="3"></a-text>
+                <a-text value="- Meeting avec l'équipe (10h)\n- Projet Lunettes XR (Update)\n- Facture Apple Store" 
+                        align="left" position="-0.8 0 0.01" color="white" width="2"></a-text>
+            </a-plane>
+        </a-entity>
 
-            <a-box position="1.5 1.5 -3" width="0.6" height="0.6" depth="0.1" color="#FF9500" class="clickable">
-                <a-text value="DOCS" align="center" position="0 -0.6 0"></a-text>
-            </a-box>
+        <a-entity id="video-window" position="1.5 1.8 -4" visible="true">
+            <a-plane width="3.5" height="2" material="color: black; opacity: 0.8; transparent: true">
+                <a-text value="LECTEUR VIDEO" align="center" color="#00ffcc" width="6"></a-text>
+                <a-circle position="0 0 0.02" radius="0.2" color="#00ffcc"></a-circle>
+            </a-plane>
+        </a-entity>
+
+        <a-entity position="0 1 -2">
+            <a-circle radius="0.15" color="#555" opacity="0.5" position="-0.5 0 0"></a-circle>
+            <a-circle radius="0.15" color="#555" opacity="0.5" position="0 0 0"></a-circle>
+            <a-circle radius="0.15" color="#555" opacity="0.5" position="0.5 0 0"></a-circle>
         </a-entity>
 
     </a-scene>
 
     <script>
-        const startBtn = document.getElementById('start-button');
-        const overlay = document.getElementById('boot-overlay');
-        const video = document.getElementById('webcam-video');
-        const appMenu = document.getElementById('app-menu');
-
-        startBtn.addEventListener('click', function() {
-            // 1. Demander l'autorisation pour les capteurs (iOS 13+)
-            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission()
-                    .then(permissionState => {
-                        if (permissionState === 'granted') {
-                            initExperience();
-                        }
-                    })
-                    .catch(console.error);
-            } else {
-                initExperience(); // Pour les appareils non-iOS
-            }
-        });
-
-        function initExperience() {
-            startBtn.style.display = 'none';
-            overlay.style.display = 'flex';
-            
-            // Lancer la caméra
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-                .then(stream => { video.srcObject = stream; });
-
-            // Séquence de Boot
-            setTimeout(() => {
-                overlay.style.opacity = '0';
-                setTimeout(() => {
-                    overlay.style.display = 'none';
-                    appMenu.setAttribute('visible', 'true');
-                }, 1000);
-            }, 3000);
+        function toggleApp(id) {
+            const el = document.getElementById(id);
+            const isVisible = el.getAttribute('visible');
+            el.setAttribute('visible', !isVisible);
         }
-        // Force la scène à se rafraîchir à la vitesse maximale de l'iPad (ProMotion 120Hz si dispo)
-const sceneEl = document.querySelector('a-scene');
-sceneEl.addEventListener('renderstart', () => {
-    sceneEl.renderer.setPixelRatio(window.devicePixelRatio);
-});
 
-// Désactiver le lissage par défaut d'A-Frame qui cause le "flottement"
-const cameraEl = document.querySelector('#camera');
-cameraEl.setAttribute('look-controls', 'smoothingFactor: 1'); // 1 = pas de lissage, réaction brute
+        function resetView() {
+            const cam = document.getElementById('main-cam');
+            cam.setAttribute('rotation', '0 0 0');
+            cam.setAttribute('position', '0 1.6 0');
+        }
     </script>
 </body>
 </html>
