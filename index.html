@@ -3,136 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>NextGen XR - Simulation OS V2</title>
+    <title>NextGen XR - Fixation Spatiale</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; }
-        
-        /* Vidéo de fond (Passthrough) */
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: sans-serif; }
         #webcam-video {
-            position: fixed; top: 0; left: 0; 
-            width: 100vw; height: 100vh;
-            object-fit: cover; z-index: -1; 
-            filter: brightness(0.8) contrast(1.1);
-            transform: scaleX(1); /* Pas de miroir pour la caméra arrière */
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            object-fit: cover; z-index: -1; filter: brightness(0.8);
         }
-
-        /* Overlay de Boot */
+        /* Bouton d'autorisation obligatoire pour iPad */
+        #start-button {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            padding: 20px 40px; background: #00ffcc; border: none; border-radius: 50px;
+            font-weight: bold; cursor: pointer; z-index: 10000;
+        }
         #boot-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, #001a1a 0%, #000 100%);
-            display: flex; flex-direction: column;
+            background: black; display: none; flex-direction: column;
             justify-content: center; align-items: center; z-index: 9999;
-            color: #00ffcc; transition: opacity 1.5s ease;
-        }
-
-        .loader-ring {
-            width: 100px; height: 100px;
-            border: 3px solid rgba(0, 255, 204, 0.1);
-            border-top: 3px solid #00ffcc;
-            border-radius: 50%;
-            animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-        }
-
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        #boot-text {
-            margin-top: 30px; letter-spacing: 4px; font-weight: 300;
-            text-transform: uppercase; font-size: 14px;
+            color: #00ffcc; transition: opacity 1s;
         }
     </style>
 </head>
 <body>
 
-    <video id="webcam-video" autoplay playsinline></video>
+    <button id="start-button">DÉMARRER L'OS</button>
 
     <div id="boot-overlay">
-        <div class="loader-ring"></div>
-        <div id="boot-text">Initialisation du Système...</div>
+        <h2 id="boot-text">INITIALISATION...</h2>
     </div>
 
-    <a-scene vr-mode-ui="enabled: false">
+    <video id="webcam-video" autoplay playsinline></video>
+
+    <a-scene vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
         
-        <a-camera id="main-cam" position="0 1.6 0" wasd-controls-enabled="false">
-            <a-entity cursor="fuse: true; fuseTimeout: 1500"
-                      position="0 0 -1"
-                      geometry="primitive: ring; radiusInner: 0.015; radiusOuter: 0.02"
-                      material="color: #00ffcc; shader: flat; opacity: 0.5"
-                      animation__click="property: scale; startEvents: click; from: 0.1 0.1 0.1; to: 1 1 1; dur: 150"
-                      animation__fusing="property: scale; startEvents: fusing; from: 1 1 1; to: 0.1 0.1 0.1; dur: 1500"
-                      animation__mouseleave="property: scale; startEvents: mouseleave; to: 1 1 1; dur: 500">
-            </a-entity>
+        <a-camera id="camera" look-controls="magicWindowTrackingEnabled: true; touchEnabled: false">
+            <a-cursor color="#00ffcc" radius-inner="0.01" radius-outer="0.02"></a-cursor>
         </a-camera>
 
         <a-entity id="app-menu" visible="false">
-            
-            <a-entity position="-1.2 1.8 -3" 
-                      animation="property: position; to: -1.2 1.85 -3; dir: alternate; dur: 2000; loop: true; easing: easeInOutSine">
-                <a-sphere radius="0.35" color="#007AFF" opacity="0.9" metalness="0.5">
-                    <a-text value="Mails" align="center" position="0 -0.6 0" width="3"></a-text>
-                </a-sphere>
-            </a-entity>
+            <a-sphere position="-1.5 1.5 -3" radius="0.4" color="#007AFF" class="clickable">
+                <a-text value="MAILS" align="center" position="0 -0.6 0"></a-text>
+            </a-sphere>
 
-            <a-entity position="0 1.8 -4"
-                      animation="property: rotation; to: 0 360 0; dur: 10000; loop: true; easing: linear">
-                <a-octahedron radius="0.5" color="#00ffcc" opacity="0.8">
-                    <a-text value="AI CORE" align="center" position="0 -0.8 0" width="4" color="#00ffcc"></a-text>
-                </a-octahedron>
-            </a-entity>
+            <a-octahedron position="0 1.8 -4" radius="0.5" color="#00ffcc" class="clickable">
+                <a-text value="AI" align="center" position="0 -0.8 0"></a-text>
+            </a-octahedron>
 
-            <a-entity position="1.2 1.8 -3"
-                      animation="property: position; to: 1.2 1.75 -3; dir: alternate; dur: 2500; loop: true; easing: easeInOutSine">
-                <a-box width="0.6" height="0.6" depth="0.1" color="#FF9500" opacity="0.9">
-                    <a-text value="Projets" align="center" position="0 -0.6 0" width="3"></a-text>
-                </a-box>
-            </a-entity>
-
-            <a-grid position="0 0 0" rotation="-90 0 0" width="10" height="10" static-body material="opacity: 0.1; color: #00ffcc"></a-grid>
+            <a-box position="1.5 1.5 -3" width="0.6" height="0.6" depth="0.1" color="#FF9500" class="clickable">
+                <a-text value="DOCS" align="center" position="0 -0.6 0"></a-text>
+            </a-box>
         </a-entity>
 
     </a-scene>
 
     <script>
-        const video = document.getElementById('webcam-video');
+        const startBtn = document.getElementById('start-button');
         const overlay = document.getElementById('boot-overlay');
-        const bootText = document.getElementById('boot-text');
+        const video = document.getElementById('webcam-video');
         const appMenu = document.getElementById('app-menu');
 
-        // 1. Accès Caméra Arrière (iPad/Mobile)
-        async function startCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "environment" } // Force la caméra arrière
-                });
-                video.srcObject = stream;
-            } catch (err) {
-                console.warn("Caméra arrière non trouvée, utilisation caméra par défaut...");
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = stream;
+        startBtn.addEventListener('click', function() {
+            // 1. Demander l'autorisation pour les capteurs (iOS 13+)
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            initExperience();
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                initExperience(); // Pour les appareils non-iOS
             }
-        }
+        });
 
-        // 2. Séquence de boot
-        function runBootSequence() {
-            setTimeout(() => bootText.innerText = "Recherche du Compute Pack...", 1000);
-            setTimeout(() => bootText.innerText = "Analyse spatiale terminée", 2500);
-            setTimeout(() => bootText.innerText = "Système Prêt", 3500);
+        function initExperience() {
+            startBtn.style.display = 'none';
+            overlay.style.display = 'flex';
+            
+            // Lancer la caméra
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                .then(stream => { video.srcObject = stream; });
 
+            // Séquence de Boot
             setTimeout(() => {
                 overlay.style.opacity = '0';
                 setTimeout(() => {
                     overlay.style.display = 'none';
-                    // Animation d'apparition du menu
                     appMenu.setAttribute('visible', 'true');
-                    appMenu.setAttribute('animation', 'property: scale; from: 0 0 0; to: 1 1 1; dur: 1200; easing: easeOutElastic');
-                }, 1500);
-            }, 4500);
+                }, 1000);
+            }, 3000);
         }
-
-        // Lancement
-        startCamera();
-        runBootSequence();
     </script>
 </body>
 </html>
